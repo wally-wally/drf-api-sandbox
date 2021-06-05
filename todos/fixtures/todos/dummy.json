@@ -4,7 +4,7 @@
   "pk": 1,
   "fields": {
     "title": "Start Django",
-    "content": "django ÇÁ·ÎÁ§Æ® »ı¼º ¹× models.py ÀÛ¼º",
+    "content": "django í”„ë¡œì íŠ¸ ë° models.py êµ¬ì„±",
     "created_at": "2021-06-05T07:05:38.090Z",
     "updated_at": "2021-06-05T07:05:38.091Z",
     "is_completed": false
@@ -14,8 +14,8 @@
   "model": "todos.todo",
   "pk": 2,
   "fields": {
-    "title": "Àåº¸±â",
-    "content": "»ç¾ß ÇÒ Ç°¸ñ : Ä¡¾à, ¼¤Çª, ÁÖ¹æ ¼¼Á¦",
+    "title": "ì¥ë³´ê¸°",
+    "content": "ë¬¼í’ˆ ëª©ë¡ \n- ì£¼ë°© ì„¸ì œ\n-ìƒ´í‘¸",
     "created_at": "2021-06-05T07:06:24.628Z",
     "updated_at": "2021-06-05T07:06:24.628Z",
     "is_completed": false
