@@ -1,0 +1,24 @@
+[
+{
+  "model": "todos.todo",
+  "pk": 1,
+  "fields": {
+    "title": "Start Django",
+    "content": "django 프로젝트 생성 및 models.py 작성",
+    "created_at": "2021-06-05T07:05:38.090Z",
+    "updated_at": "2021-06-05T07:05:38.091Z",
+    "is_completed": false
+  }
+},
+{
+  "model": "todos.todo",
+  "pk": 2,
+  "fields": {
+    "title": "장보기",
+    "content": "사야 할 품목 : 치약, 샴푸, 주방 세제",
+    "created_at": "2021-06-05T07:06:24.628Z",
+    "updated_at": "2021-06-05T07:06:24.628Z",
+    "is_completed": false
+  }
+}
+]
