@@ -24,7 +24,7 @@
 - Clone to Repository
 
 ```bash
-https://github.com/wally-wally/drf-api-sandbox.git
+git clone https://github.com/wally-wally/drf-api-sandbox.git
 cd drf-api-sandbox
 ```
 
