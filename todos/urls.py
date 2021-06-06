@@ -22,7 +22,7 @@ schema_view = get_schema_view(
 # router.register(r'todos',views.TodoViewSet)
 
 urlpatterns = [
-    path('todos/', views.todo_list, name="todo-list"),
+    path('todos/', views.todos, name="todo-list"),
     path('todos/<id>/', views.todo_detail, name="todo-detail"),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redocs/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),

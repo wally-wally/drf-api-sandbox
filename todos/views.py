@@ -8,10 +8,16 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg.inspectors.base import openapi
 from .serializers import TodoSerializer
 from .models import Todo
+from todos import serializers
 
 class CustomNotNumberException(APIException):
     status_code = 400
     default_detail = '숫자 형태의 id 값을 작성해주세요.'
+
+
+class BadRequestException(APIException):
+    status_code = 400
+    default_detail = 'request 요청 양식을 다시 확인해주세요.'
 
 
 def get_field(parameter, description, type):
@@ -40,12 +46,12 @@ def get_error_response(description):
 
 def get_todo_list_property():
     return {
-        'id': get_field('id', '할일 항목 고유 id 값', openapi.TYPE_INTEGER),
-        'title': get_field('title', '할일 제목', openapi.TYPE_STRING),
-        'content': get_field('contet', '할일 내용', openapi.TYPE_STRING),
-        'created_at': get_field('created_at', '할일 생성 일자', openapi.TYPE_STRING),
-        'updated_at': get_field('updated_at', '할일 수정 일자', openapi.TYPE_STRING),
-        'is_completed': get_field('is_completed', '할일 완료 여부', openapi.TYPE_BOOLEAN),
+        'id': get_field('id', '할 일 항목 고유 id 값', openapi.TYPE_INTEGER),
+        'title': get_field('title', '할 일 제목', openapi.TYPE_STRING),
+        'content': get_field('contet', '할 일 내용', openapi.TYPE_STRING),
+        'created_at': get_field('created_at', '할 일 생성 일자', openapi.TYPE_STRING),
+        'updated_at': get_field('updated_at', '할 일 수정 일자', openapi.TYPE_STRING),
+        'is_completed': get_field('is_completed', '할 일 완료 여부', openapi.TYPE_BOOLEAN),
     }
 
 
@@ -53,7 +59,7 @@ def get_todo_list_success_response():
     return openapi.Schema(
         'success_response',
         type = openapi.TYPE_ARRAY,
-        description = '전체 할일 목록을 정상적으로 불러온 경우',
+        description = '전체 할 일 목록을 정상적으로 불러온 경우',
         items = openapi.Items(
             type = openapi.TYPE_OBJECT,
             properties = get_todo_list_property()
@@ -65,7 +71,7 @@ def get_todo_detail_success_response():
     return openapi.Schema(
         'success_response',
         type = openapi.TYPE_OBJECT,
-        description = 'id 값과 매칭되는 할일 항목을 찾은 경우',
+        description = 'id 값과 매칭되는 할 일 항목을 찾은 경우',
         properties = get_todo_list_property()
     )
 
@@ -80,11 +86,60 @@ def get_todo_detail_success_response():
         500: get_error_response('서버에서 에러가 발생한 경우'),
     }
 )
-@api_view(['GET'])
-def todo_list(request):
-    todos = Todo.objects.all()
-    serializer = TodoSerializer(todos, many=True)
-    return Response(serializer.data)
+@swagger_auto_schema(
+    method = 'post',
+    operation_id = 'Todo 생성',
+    operation_description = '할 일 생성하는 API("is_completed"는 Frontend에서 요청시 포함하지 않아도 됨)',
+    tags = ['Todos'],
+    request_body = TodoSerializer,
+    responses = {
+        201: openapi.Schema(
+            'success_response',
+            type = openapi.TYPE_OBJECT,
+            description = '할 일 등록이 정상적으로 성공한 경우',
+            properties = get_todo_list_property()
+        ),
+        400: get_error_response('제목 또는 내용이 empty string이거나 잘못된 요청을 한 경우'),
+        500: get_error_response('서버에서 에러가 발생한 경우'),
+    }
+)
+@api_view(['GET', 'POST'])
+def todos(request):
+    if request.method == 'GET':
+        todos = Todo.objects.all()
+        serializer = TodoSerializer(todos, many=True)
+
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        request_form = request.data
+        if 'is_completed' in request_form:
+            request_form.pop('is_completed')
+        
+        if 'title' not in request_form or 'content' not in request_form:
+            raise BadRequestException()
+
+        class EmptyTitleException(APIException):
+            status_code = 400
+            default_detail = '할 일 제목을 1자 이상 작성해주세요.'
+
+        if request_form['title'] == '':
+            raise EmptyTitleException()
+
+        class EmptyContentException(APIException):
+            status_code = 400
+            default_detail = '할 일 내용을 1자 이상 작성해주세요.'
+
+
+        if request_form['content'] == '':
+            raise EmptyContentException()
+
+        serializer = TodoSerializer(data=request_form)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+
+        raise BadRequestException()
 
 
 @swagger_auto_schema(
@@ -95,13 +150,13 @@ def todo_list(request):
     manual_parameters = [openapi.Parameter(
         'id',
         openapi.IN_PATH,
-        description = '할일 항목의 고유 id 값',
+        description = '할 일 항목의 고유 id 값',
         type = openapi.TYPE_STRING,
     )],
     responses = {
         200: get_todo_detail_success_response(),
         400: get_error_response('id 값에 숫자 이외의 다른 타입의 값이 포함되어 있는 경우'),
-        404: get_error_response('id 값과 매칭되는 할일 항목을 못 찾은 경우'),
+        404: get_error_response('id 값과 매칭되는 할 일 항목을 못 찾은 경우'),
         500: get_error_response('서버에서 에러가 발생한 경우'),
     }
 )
