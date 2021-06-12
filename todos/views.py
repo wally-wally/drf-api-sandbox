@@ -160,40 +160,35 @@ def todos(request):
         500: get_error_response('서버에서 에러가 발생한 경우'),
     }
 )
-@api_view(['GET'])
+@swagger_auto_schema(
+    method = 'delete',
+    operation_id = '특정 Todo 항목 삭제하기',
+    operation_description = 'id 값을 받아서 특정 Todo 항목을 삭제하는 API',
+    tags = ['Todos'],
+    manual_parameters = [openapi.Parameter(
+        'id',
+        openapi.IN_PATH,
+        description = '할 일 항목의 고유 id 값',
+        type = openapi.TYPE_STRING,
+    )],
+    responses = {
+        204: 'id 값과 매칭되는 할 일 항목을 찾아서 삭제하는데 성공한 경우',
+        400: get_error_response('id 값에 숫자 이외의 다른 타입의 값이 포함되어 있는 경우'),
+        404: get_error_response('id 값과 매칭되는 할 일 항목을 못 찾은 경우'),
+        500: get_error_response('서버에서 에러가 발생한 경우'),
+    }
+)
+@api_view(['GET', 'DELETE'])
 def todo_detail(request, id):
     if not(re.match('^\d+$', str(id))):
         raise CustomNotNumberException()
 
     todo = get_object_or_404(Todo, pk=id)
-    serializer = TodoSerializer(todo)
-    return Response(serializer.data)
 
-
-# TODO: class 기반의 viewset으로 구성
-
-# class TodoViewSet(ModelViewSet):
-#     queryset = Todo.objects.all()
-#     serializer_class = TodoSerializer
-
-#     @action(detail=False, methods=['get'])
-#     def todo_list(self, request):
-#         """
-#         전체 Todo List 불러오는 API
-#         """
-#         serializer = self.serializer_class(self.querySet, many=True)
-#         return Response(serializer.data)
-
-
-#     @action(detail=False, methods=['get'])
-#     def todo_detail(self, request, todo_pk):
-#         """
-#         id 값을 받아서 특정 Todo 항목을 불러오는 API
-#         (숫자 이외 값을 전송하면 400 에러 발생)
-#         """
-#         if not(re.match('^\d+$', str(todo_pk))):
-#             raise CustomNotNumberException()
-
-#         todo = get_object_or_404(self.querySet, pk=todo_pk)
-#         serializer = self.serializer_class(todo)
-#         return Response(serializer.data)
+    if request.method == 'GET':
+        serializer = TodoSerializer(todo)
+        return Response(serializer.data)
+        
+    elif request.method == 'DELETE':
+        todo.delete()
+        return Response(status=204)
