@@ -93,7 +93,6 @@ def check_necessary_parameter(request_data):
         status_code = 400
         default_detail = '할 일 내용을 1자 이상 작성해주세요.'
 
-
     if request_form['content'] == '':
         raise EmptyContentException()
 
