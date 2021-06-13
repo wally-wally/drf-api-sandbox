@@ -161,6 +161,24 @@ def todos(request):
     }
 )
 @swagger_auto_schema(
+    method = 'patch',
+    operation_id = '특정 Todo 항목 수정',
+    operation_description = '특정 할 일을 수정하는 API(해당 API에서는 제목과 내용만 수정하고, 할 일 완료 여부는 별도 API로 요청)',
+    tags = ['Todos'],
+    request_body = TodoSerializer,
+    responses = {
+        201: openapi.Schema(
+            'success_response',
+            type = openapi.TYPE_OBJECT,
+            description = '할 일 수정이 정상적으로 성공한 경우',
+            properties = get_todo_list_property()
+        ),
+        400: get_error_response('클라이언트측에서 잘못 요청한 경우'),
+        404: get_error_response('id 값과 매칭되는 할 일 항목을 못 찾은 경우'),
+        500: get_error_response('서버에서 에러가 발생한 경우'),
+    }
+)
+@swagger_auto_schema(
     method = 'delete',
     operation_id = '특정 Todo 항목 삭제하기',
     operation_description = 'id 값을 받아서 특정 Todo 항목을 삭제하는 API',
@@ -178,7 +196,7 @@ def todos(request):
         500: get_error_response('서버에서 에러가 발생한 경우'),
     }
 )
-@api_view(['GET', 'DELETE'])
+@api_view(['GET', 'PATCH', 'DELETE'])
 def todo_detail(request, id):
     if not(re.match('^\d+$', str(id))):
         raise CustomNotNumberException()
@@ -188,6 +206,17 @@ def todo_detail(request, id):
     if request.method == 'GET':
         serializer = TodoSerializer(todo)
         return Response(serializer.data)
+
+    elif request.method == 'PATCH':
+        check_necessary_parameter(request.data)
+
+        serializer = TodoSerializer(data=request.data, instance=todo)
+
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data, status=201)
+
+        return Response(serializer.errors, status=400)
         
     elif request.method == 'DELETE':
         todo.delete()
