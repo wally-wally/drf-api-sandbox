@@ -1,14 +1,12 @@
 import re
 from django.shortcuts import get_object_or_404
-# from rest_framework.viewsets import ModelViewSet
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg.inspectors.base import openapi
 from .serializers import TodoSerializer
 from .models import Todo
-from todos import serializers
 
 class CustomNotNumberException(APIException):
     status_code = 400
@@ -59,7 +57,6 @@ def get_todo_list_success_response():
     return openapi.Schema(
         'success_response',
         type = openapi.TYPE_ARRAY,
-        description = '전체 할 일 목록을 정상적으로 불러온 경우',
         items = openapi.Items(
             type = openapi.TYPE_OBJECT,
             properties = get_todo_list_property()
@@ -76,13 +73,48 @@ def get_todo_detail_success_response():
     )
 
 
+def check_necessary_parameter(request_data):
+    request_form = request_data
+
+    if 'is_completed' in request_form:
+        request_form.pop('is_completed')
+    
+    if 'title' not in request_form or 'content' not in request_form:
+        raise BadRequestException()
+
+    class EmptyTitleException(APIException):
+        status_code = 400
+        default_detail = '할 일 제목을 1자 이상 작성해주세요.'
+
+    if request_form['title'] == '':
+        raise EmptyTitleException()
+
+    class EmptyContentException(APIException):
+        status_code = 400
+        default_detail = '할 일 내용을 1자 이상 작성해주세요.'
+
+
+    if request_form['content'] == '':
+        raise EmptyContentException()
+
+
 @swagger_auto_schema(
     method = 'get',
     operation_id = '전체 Todo List 불러오기',
     operation_description = '전체 Todo List 불러오는 API',
     tags = ['Todos'],
     responses = {
-        200: get_todo_list_success_response(),
+        200: openapi.Schema(
+            type = openapi.TYPE_OBJECT,
+            description = '전체 할 일 목록을 정상적으로 불러온 경우',
+            properties = {
+                'data': get_todo_list_success_response(),
+                'todo_count': openapi.Schema(
+                    type = openapi.TYPE_INTEGER,
+                    description = '할 일 갯수',
+                ),
+            }
+        ),
         500: get_error_response('서버에서 에러가 발생한 경우'),
     }
 )
@@ -109,33 +141,19 @@ def todos(request):
         todos = Todo.objects.all()
         serializer = TodoSerializer(todos, many=True)
 
-        return Response(serializer.data)
+        response_dict = dict()
+
+        response_dict['data'] = serializer.data
+        response_dict['todo_count'] = len(serializer.data)
+
+        return Response(response_dict)
+
     elif request.method == 'POST':
-        request_form = request.data
-        if 'is_completed' in request_form:
-            request_form.pop('is_completed')
-        
-        if 'title' not in request_form or 'content' not in request_form:
-            raise BadRequestException()
+        check_necessary_parameter(request.data)
 
-        class EmptyTitleException(APIException):
-            status_code = 400
-            default_detail = '할 일 제목을 1자 이상 작성해주세요.'
+        serializer = TodoSerializer(data=request.data)
 
-        if request_form['title'] == '':
-            raise EmptyTitleException()
-
-        class EmptyContentException(APIException):
-            status_code = 400
-            default_detail = '할 일 내용을 1자 이상 작성해주세요.'
-
-
-        if request_form['content'] == '':
-            raise EmptyContentException()
-
-        serializer = TodoSerializer(data=request_form)
-
-        if serializer.is_valid():
+        if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data, status=201)
 
