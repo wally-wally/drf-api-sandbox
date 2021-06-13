@@ -238,3 +238,41 @@ def todo_detail(request, id):
     elif request.method == 'DELETE':
         todo.delete()
         return Response(status=204)
+
+
+@swagger_auto_schema(
+    method = 'patch',
+    operation_id = '특정 Todo 항목 완료 여부 변경',
+    operation_description = '특정 할 일의 완료 여부를 변경하는 API',
+    tags = ['Todos'],
+    responses = {
+        201: openapi.Schema(
+            'success_response',
+            type = openapi.TYPE_OBJECT,
+            description = '할 일 완료 여부 수정이 정상적으로 성공한 경우',
+            properties = get_todo_list_property()
+        ),
+        400: get_error_response('클라이언트측에서 잘못 요청한 경우'),
+        404: get_error_response('id 값과 매칭되는 할 일 항목을 못 찾은 경우'),
+        500: get_error_response('서버에서 에러가 발생한 경우'),
+    }
+)
+@api_view(['PATCH'])
+def todo_toggle_completed(request, id):
+    if not(re.match('^\d+$', str(id))):
+        raise CustomNotNumberException()
+
+    todo = get_object_or_404(Todo, pk=id)
+
+    todo_data = dict()
+    todo_data['title'] = todo.title
+    todo_data['content'] = todo.content
+    todo_data['is_completed'] = not(todo.is_completed)
+
+    serializer = TodoSerializer(data=todo_data, instance=todo)
+
+    if serializer.is_valid(raise_exception=True):
+        serializer.save()
+        return Response(serializer.data, status=201)
+
+    return Response(serializer.errors, status=400)
